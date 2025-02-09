@@ -8,17 +8,95 @@
 </head>
 <body>
     <div class="container">
-        <div class="scores">
-            <div id="player1-score">Oyuncu 1: 0</div>
-            <div id="player2-score">Oyuncu 2: 0</div>
-        </div>
-        <canvas id="game-area"></canvas>
-        <div class="controls">
-            <div class="instructions">
-                <p>Oyuncu 1: WASD tuşları</p>
-                <p>Oyuncu 2: Yön tuşları</p>
+        <div id="menu" class="menu">
+            <h2>Oyun Modu Seçin</h2>
+            <div class="game-modes">
+                <button id="mode-score">7 Gol Modu</button>
+                <button id="mode-time">1 Dakika Modu</button>
+                <button id="mode-endless">Sınırsız Mod</button>
             </div>
-            <button id="start-btn">Oyunu Başlat</button>
+            <div class="player-setup">
+                <div class="player-column">
+                    <div class="name-input">
+                        <label for="player1-name">1. Oyuncu İsmi:</label>
+                        <input type="text" id="player1-name" placeholder="İsim girin veya boş bırakın">
+                    </div>
+                    <div class="character-selection">
+                        <h3>Karakter Seç</h3>
+                        <div class="character-grid">
+                            <canvas id="preview-turkey-1" class="character-preview selected" data-country="turkey"></canvas>
+                            <canvas id="preview-brazil-1" class="character-preview" data-country="brazil"></canvas>
+                            <canvas id="preview-argentina-1" class="character-preview" data-country="argentina"></canvas>
+                            <canvas id="preview-france-1" class="character-preview" data-country="france"></canvas>
+                            <canvas id="preview-germany-1" class="character-preview" data-country="germany"></canvas>
+                            <canvas id="preview-spain-1" class="character-preview" data-country="spain"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="player-column">
+                    <div class="name-input">
+                        <label for="player2-name">2. Oyuncu İsmi:</label>
+                        <input type="text" id="player2-name" placeholder="İsim girin veya boş bırakın">
+                    </div>
+                    <div class="character-selection">
+                        <h3>Karakter Seç</h3>
+                        <div class="character-grid">
+                            <canvas id="preview-turkey-2" class="character-preview" data-country="turkey"></canvas>
+                            <canvas id="preview-brazil-2" class="character-preview selected" data-country="brazil"></canvas>
+                            <canvas id="preview-argentina-2" class="character-preview" data-country="argentina"></canvas>
+                            <canvas id="preview-france-2" class="character-preview" data-country="france"></canvas>
+                            <canvas id="preview-germany-2" class="character-preview" data-country="germany"></canvas>
+                            <canvas id="preview-spain-2" class="character-preview" data-country="spain"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="game-container" style="display: none;">
+            <div class="game-header">
+                <div class="score-container player1">
+                    <div class="player-name">OYUNCU 1</div>
+                    <div id="player1-score" class="score">0</div>
+                </div>
+                <div id="timer" class="timer" style="display: none;">
+                    <div class="timer-label">SÜRE</div>
+                    <div class="timer-value">60</div>
+                </div>
+                <div class="score-container player2">
+                    <div class="player-name">OYUNCU 2</div>
+                    <div id="player2-score" class="score">0</div>
+                </div>
+            </div>
+            <button id="menu-btn" class="menu-btn">Menüye Dön</button>
+            <canvas id="game-area"></canvas>
+            <div class="controls">
+                <div class="instructions">
+                    <div class="player-controls">
+                        <div class="player">
+                            <span>Oyuncu 1:</span>
+                            <div class="keyboard">
+                                <div class="key">W</div>
+                                <div class="key-row">
+                                    <div class="key">A</div>
+                                    <div class="key">S</div>
+                                    <div class="key">D</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="player">
+                            <span>Oyuncu 2:</span>
+                            <div class="keyboard">
+                                <div class="key">↑</div>
+                                <div class="key-row">
+                                    <div class="key">←</div>
+                                    <div class="key">↓</div>
+                                    <div class="key">→</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>
