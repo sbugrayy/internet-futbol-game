@@ -793,6 +793,12 @@ function endGame() {
         resetScores();
         isGameRunning = true;
         
+        // Eğer süre modundaysa süreyi yeniden başlat
+        if (gameMode === 'time') {
+            timeLeft = 60;
+            startTimer();
+        }
+        
         // Düdük ve oyun müziğini ekle
         AudioManager.stopMusic();
         AudioManager.play('whistle');
