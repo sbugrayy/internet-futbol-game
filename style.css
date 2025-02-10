@@ -758,4 +758,77 @@ body {
     margin-top: -6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
+}
+
+/* Engel animasyonları */
+@keyframes obstacleWarning {
+    0% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes obstacleDisappear {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0); }
+}
+
+.obstacle-warning {
+    position: absolute;
+    border: 2px dashed rgba(255, 0, 0, 0.5);
+    animation: obstacleWarning 1s ease-out;
+}
+
+.main-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.game-title {
+    font-size: 72px;
+    color: white;
+    margin-bottom: 50px;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    font-weight: 900;
+    background: linear-gradient(to right, #fff, #e0e0e0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: pulse 2s infinite;
+}
+
+.main-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.main-menu-button {
+    padding: 20px 60px;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    min-width: 300px;
+}
+
+.main-menu-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #3dbb95 0%, #164e87 100%);
+}
+
+.main-menu-button:active {
+    transform: translateY(1px);
 } 

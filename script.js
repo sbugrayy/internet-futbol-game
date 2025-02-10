@@ -151,37 +151,39 @@ function movePlayers() {
         p2: { x: player2.x, y: player2.y }
     };
 
-    // Oyuncu 1 (WASD)
+    // Player 1 hareketi (WASD)
     if (keys.w) player1.velocity.y -= player1.acceleration;
     if (keys.s) player1.velocity.y += player1.acceleration;
     if (keys.a) player1.velocity.x -= player1.acceleration;
     if (keys.d) player1.velocity.x += player1.acceleration;
 
-    // Oyuncu 2 (Yön tuşları)
+    // Player 2 hareketi (Ok tuşları)
     if (keys.ArrowUp) player2.velocity.y -= player2.acceleration;
     if (keys.ArrowDown) player2.velocity.y += player2.acceleration;
     if (keys.ArrowLeft) player2.velocity.x -= player2.acceleration;
     if (keys.ArrowRight) player2.velocity.x += player2.acceleration;
 
-    // Hız sınırlaması ve sürtünme uygula
+    // Hız sınırlaması ve sürtünme
     [player1, player2].forEach(player => {
-        // Hız sınırlaması
-        player.velocity.x = Math.max(Math.min(player.velocity.x, player.maxSpeed), -player.maxSpeed);
-        player.velocity.y = Math.max(Math.min(player.velocity.y, player.maxSpeed), -player.maxSpeed);
-
         // Sürtünme uygula
         player.velocity.x *= player.friction;
         player.velocity.y *= player.friction;
+
+        // Hız sınırlaması
+        const speed = Math.sqrt(player.velocity.x * player.velocity.x + player.velocity.y * player.velocity.y);
+        if (speed > player.maxSpeed) {
+            const ratio = player.maxSpeed / speed;
+            player.velocity.x *= ratio;
+            player.velocity.y *= ratio;
+        }
 
         // Pozisyonu güncelle
         player.x += player.velocity.x;
         player.y += player.velocity.y;
 
         // Saha sınırları kontrolü
-        if (player.x < field.x) player.x = field.x;
-        if (player.x + player.width > field.x + field.width) player.x = field.x + field.width - player.width;
-        if (player.y < field.y) player.y = field.y;
-        if (player.y + player.height > field.y + field.height) player.y = field.y + field.height - player.height;
+        player.x = Math.max(field.x, Math.min(field.x + field.width - player.width, player.x));
+        player.y = Math.max(field.y, Math.min(field.y + field.height - player.height, player.y));
     });
 
     // Çarpışma kontrolü
@@ -512,15 +514,16 @@ function drawBall() {
 
 // Oyun döngüsünü güncelle
 function gameLoop() {
-    if (canvas.style.display !== 'none') { // Canvas görünür ise çiz
-        // Her zaman çiz
-        draw();
+    if (canvas.style.display !== 'none') {
+        // Sahayı temizle
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Sadece oyun aktifse fizik hesaplamalarını yap
         if (isGameRunning) {
             movePlayers();
             updateBall();
         }
+        
+        draw();
     }
     
     requestAnimationFrame(gameLoop);
@@ -576,39 +579,57 @@ const characters = {
     }
 };
 
-let player1Character = 'turkey';
-let player2Character = 'brazil';
+// Varsayılan karakter seçimleri
+let player1Character = 'turkey';  // Player 1 için Türkiye
+let player2Character = 'brazil';  // Player 2 için Brezilya
+
+// Varsayılan renkleri de ayarla
+player1.color = characters.turkey.primaryColor;
+player1.shortColor = characters.turkey.secondaryColor;
+player1.skinColor = characters.turkey.skinColor;
+player1.hairColor = characters.turkey.hairColor;
+
+player2.color = characters.brazil.primaryColor;
+player2.shortColor = characters.brazil.secondaryColor;
+player2.skinColor = characters.brazil.skinColor;
+player2.hairColor = characters.brazil.hairColor;
 
 // Karakter önizlemelerini çiz
-function drawCharacterPreview(canvas, character) {
+function drawCharacterPreview(canvas, country) {
     const ctx = canvas.getContext('2d');
-    canvas.width = 100; // Sabit genişlik
-    canvas.height = 100; // Sabit yükseklik
+    const character = characters[country];
     
-    // Arka plan
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Canvas boyutlarını ayarla
+    canvas.width = 100;
+    canvas.height = 100;
     
-    // Mini karakter çizimi
+    // Arkaplanı temizle
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Mini oyuncu özellikleri
     const miniPlayer = {
-        x: 35,
-        y: 20,
+        x: canvas.width / 2 - 15,  // Merkezde olması için
+        y: canvas.height / 2 - 25,  // Biraz yukarı çekelim ki yazı sığsın
         width: 30,
-        height: 50,
-        color: characters[character].primaryColor,
-        shortColor: characters[character].secondaryColor,
-        skinColor: characters[character].skinColor,
-        hairColor: characters[character].hairColor,
-        shoeColor: '#000000'
+        height: 40,
+        color: character.primaryColor,
+        shortColor: character.secondaryColor,
+        skinColor: character.skinColor,
+        hairColor: character.hairColor,
+        shoeColor: '#000000',
+        sockColor: '#ffffff',
+        head: { radius: 10 },
+        legs: { width: 6, height: 15 }
     };
     
+    // Oyuncuyu çiz
     drawPlayer(miniPlayer, ctx);
     
-    // Ülke ismi
+    // Ülke ismini ekle
     ctx.fillStyle = 'white';
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(characters[character].name, canvas.width/2, 90);
+    ctx.fillText(character.name, canvas.width / 2, canvas.height - 10);
 }
 
 // Tüm karakter önizlemelerini çiz
@@ -654,9 +675,13 @@ document.querySelectorAll('.character-preview').forEach(preview => {
 
 // Geri sayım fonksiyonunu güncelle
 function startGameWithMode(mode) {
-    AudioManager.stopMusic();
+    AudioManager.stopMusic(); // Önce tüm müzikleri durdur
     AudioManager.play('whistle'); // Başlangıç düdüğü
-    AudioManager.play('gameMusic'); // Oyun müziğini başlat
+    
+    // Kısa bir gecikme ile oyun müziğini başlat (düdük sesiyle çakışmaması için)
+    setTimeout(() => {
+        AudioManager.play('gameMusic');
+    }, 100);
     
     gameMode = mode;
     hideMenu();
@@ -728,20 +753,36 @@ function updateControlNames() {
 function endGame() {
     AudioManager.stopMusic();
     isGameRunning = false;
-    const player1FinalScore = player1Score.value;
-    const player2FinalScore = player2Score.value;
     
     const winAnim = document.createElement('div');
     winAnim.className = 'win-animation';
     
+    // Kazanan yazısı için container
     const textContainer = document.createElement('div');
     textContainer.className = 'win-text';
     
+    // Skor mesajı için container
     const message = document.createElement('div');
     message.className = 'win-message';
     
-    const buttonsContainer = document.createElement('div');
-    buttonsContainer.className = 'win-buttons';
+    // Kazananı belirle ve yazıyı ayarla
+    if (player1Score.value === player2Score.value) {
+        AudioManager.play('draw');
+        textContainer.innerHTML = `<div class="draw-text">BERABERE!</div>`;
+        message.textContent = `${player1Score.value} - ${player2Score.value}`;
+    } else if (player1Score.value > player2Score.value) {
+        AudioManager.play('win');
+        textContainer.innerHTML = `<span class="winner-name">${player1Name}</span>KAZANDI!`;
+        message.textContent = `${player1Score.value} - ${player2Score.value}`;
+    } else {
+        AudioManager.play('win');
+        textContainer.innerHTML = `<span class="winner-name">${player2Name}</span>KAZANDI!`;
+        message.textContent = `${player1Score.value} - ${player2Score.value}`;
+    }
+    
+    // Butonlar için container
+    const buttons = document.createElement('div');
+    buttons.className = 'win-buttons';
     
     const playAgainButton = document.createElement('button');
     playAgainButton.className = 'menu-button';
@@ -751,6 +792,13 @@ function endGame() {
         resetGame();
         resetScores();
         isGameRunning = true;
+        
+        // Düdük ve oyun müziğini ekle
+        AudioManager.stopMusic();
+        AudioManager.play('whistle');
+        setTimeout(() => {
+            AudioManager.play('gameMusic');
+        }, 100);
     };
     
     const menuButton = document.createElement('button');
@@ -762,26 +810,14 @@ function endGame() {
         document.getElementById('player1-name').value = '';
         document.getElementById('player2-name').value = '';
     };
-
-    if (player1FinalScore > player2FinalScore) {
-        textContainer.innerHTML = `<span class="winner-name">${player1Name}</span>KAZANDI!`;
-        message.textContent = `${player1FinalScore} - ${player2FinalScore}`;
-        AudioManager.play('win');
-    } else if (player2FinalScore > player1FinalScore) {
-        textContainer.innerHTML = `<span class="winner-name">${player2Name}</span>KAZANDI!`;
-        message.textContent = `${player1FinalScore} - ${player2FinalScore}`;
-        AudioManager.play('win');
-    } else {
-        textContainer.innerHTML = `<div class="draw-text">BERABERE!</div>`;
-        message.textContent = `${player1FinalScore} - ${player2FinalScore}`;
-        AudioManager.play('draw');
-    }
     
-    buttonsContainer.appendChild(playAgainButton);
-    buttonsContainer.appendChild(menuButton);
+    // Elementleri birleştir
+    buttons.appendChild(playAgainButton);
+    buttons.appendChild(menuButton);
     winAnim.appendChild(textContainer);
     winAnim.appendChild(message);
-    winAnim.appendChild(buttonsContainer);
+    winAnim.appendChild(buttons);
+    
     document.body.appendChild(winAnim);
 }
 
@@ -816,7 +852,6 @@ function showMenu() {
     gameContainer.style.display = 'none';
     canvas.style.display = 'none';
     
-    // Oyun müziğini durdur ve menü müziğini başlat
     AudioManager.stopMusic();
     AudioManager.play('menuMusic');
 }
@@ -925,24 +960,8 @@ function resetGame() {
     resetScores();
 }
 
-// Sayfa yüklendiğinde karakter önizlemelerini başlat
+// Sayfa yüklendiğinde
 window.addEventListener('load', () => {
-    console.log('Proje konumu:', window.location.href);
-    console.log('Ses dosyaları kontrol ediliyor...');
-    Object.entries(AudioManager.sounds).forEach(([name, audio]) => {
-        console.log(`${name} dosya yolu:`, audio.src);
-        // Dosyanın varlığını kontrol et
-        fetch(audio.src)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                console.log(`${name} dosyası bulundu!`);
-            })
-            .catch(error => {
-                console.error(`${name} dosyası bulunamadı:`, error);
-            });
-    });
     AudioManager.init();
     initializeCharacterPreviews();
     canvas.width = 800;
@@ -950,11 +969,6 @@ window.addEventListener('load', () => {
     showMenu();
     resetGame();
     gameLoop();
-    
-    // Menü müziğini kaldıralım
-    // setTimeout(() => {
-    //     AudioManager.play('menuMusic');
-    // }, 100);
     
     // Enter tuşuna basıldığında oyunu başlatma
     document.getElementById('player2-name').addEventListener('keypress', (e) => {
@@ -1140,7 +1154,7 @@ const AudioManager = {
         const sound = this.sounds[soundName];
         if (sound) {
             try {
-                // Eğer müzik çalınıyorsa, diğer müzikleri durdur
+                // Sadece müzik değişirken diğer müzikleri durdur
                 if (soundName === 'menuMusic' || soundName === 'gameMusic') {
                     this.stopMusic();
                 }
