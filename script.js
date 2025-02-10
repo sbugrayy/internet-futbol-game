@@ -31,20 +31,23 @@ const player1 = {
     x: 200,
     y: canvas.height / 2,
     width: 30,
-    height: 50,
-    speed: 4.5,
+    height: 40,
+    speed: 4,
+    acceleration: 0.4,
+    friction: 0.85,
+    velocity: {
+        x: 0,
+        y: 0
+    },
     color: '#ff0000',
-    hairColor: '#4a3626',
-    skinColor: '#ffd1b3',
-    shoeColor: '#000000',
     shortColor: '#ffffff',
+    skinColor: '#ffdbac',
+    hairColor: '#000000',
+    shoeColor: '#000000',
     sockColor: '#ffffff',  // Çorap rengi
     number: '9',           // Forma numarası
     head: { radius: 10 },
     legs: { width: 6, height: 15 },
-    velocity: { x: 0, y: 0 },
-    friction: 0.85,
-    acceleration: 0.8,
     maxSpeed: 6
 };
 
@@ -52,20 +55,23 @@ const player2 = {
     x: 600,
     y: canvas.height / 2,
     width: 30,
-    height: 50,
-    speed: 4.5,
+    height: 40,
+    speed: 4,
+    acceleration: 0.4,
+    friction: 0.85,
+    velocity: {
+        x: 0,
+        y: 0
+    },
     color: '#0000ff',
-    hairColor: '#4a3626',
-    skinColor: '#ffd1b3',
-    shoeColor: '#000000',
     shortColor: '#ffffff',
+    skinColor: '#ffdbac',
+    hairColor: '#000000',
+    shoeColor: '#000000',
     sockColor: '#ffffff',
     number: '10',
     head: { radius: 10 },
     legs: { width: 6, height: 15 },
-    velocity: { x: 0, y: 0 },
-    friction: 0.85,
-    acceleration: 0.8,
     maxSpeed: 6
 };
 
@@ -224,6 +230,7 @@ function updateBall() {
     // Oyuncularla çarpışma
     [player1, player2].forEach((player, index) => {
         if (checkCollision(ball, player)) {
+            AudioManager.play('kick');
             // Çarpışma açısı
             const dx = ball.x - (player.x + player.width/2);
             const dy = ball.y - (player.y + player.height/2);
@@ -251,10 +258,12 @@ function updateBall() {
         ball.y = field.y + field.height - ball.radius;
         ball.speedY = -ball.speedY * ball.bounceDamping;
         ball.speedX *= 0.95;
+        AudioManager.play('wallHit');
     } else if (ball.y - ball.radius < field.y) {
         ball.y = field.y + ball.radius;
         ball.speedY = -ball.speedY * ball.bounceDamping;
         ball.speedX *= 0.95;
+        AudioManager.play('wallHit');
     }
 
     // Gol kontrolü ve yan sınırlar
@@ -264,12 +273,14 @@ function updateBall() {
             (ball.y < goals.left.y || ball.y > goals.left.y + goals.left.height)) {
             ball.x = field.x + ball.radius;
             ball.speedX = -ball.speedX * ball.bounceDamping;
+            AudioManager.play('wallHit');
         }
         // Sağ sınır kontrolü (kale dışında)
         if (ball.x + ball.radius > field.x + field.width && 
             (ball.y < goals.right.y || ball.y > goals.right.y + goals.right.height)) {
             ball.x = field.x + field.width - ball.radius;
             ball.speedX = -ball.speedX * ball.bounceDamping;
+            AudioManager.play('wallHit');
         }
     }
 }
@@ -643,6 +654,10 @@ document.querySelectorAll('.character-preview').forEach(preview => {
 
 // Geri sayım fonksiyonunu güncelle
 function startGameWithMode(mode) {
+    AudioManager.stopMusic();
+    AudioManager.play('whistle'); // Başlangıç düdüğü
+    AudioManager.play('gameMusic'); // Oyun müziğini başlat
+    
     gameMode = mode;
     hideMenu();
     showGame();
@@ -711,6 +726,7 @@ function updateControlNames() {
 
 // endGame fonksiyonunu güncelle
 function endGame() {
+    AudioManager.stopMusic();
     isGameRunning = false;
     const player1FinalScore = player1Score.value;
     const player2FinalScore = player2Score.value;
@@ -750,12 +766,15 @@ function endGame() {
     if (player1FinalScore > player2FinalScore) {
         textContainer.innerHTML = `<span class="winner-name">${player1Name}</span>KAZANDI!`;
         message.textContent = `${player1FinalScore} - ${player2FinalScore}`;
+        AudioManager.play('win');
     } else if (player2FinalScore > player1FinalScore) {
         textContainer.innerHTML = `<span class="winner-name">${player2Name}</span>KAZANDI!`;
         message.textContent = `${player1FinalScore} - ${player2FinalScore}`;
+        AudioManager.play('win');
     } else {
         textContainer.innerHTML = `<div class="draw-text">BERABERE!</div>`;
         message.textContent = `${player1FinalScore} - ${player2FinalScore}`;
+        AudioManager.play('draw');
     }
     
     buttonsContainer.appendChild(playAgainButton);
@@ -795,7 +814,11 @@ function showMenu() {
     resetGame();
     menuElement.style.display = 'block';
     gameContainer.style.display = 'none';
-    canvas.style.display = 'none'; // Canvas'ı gizle
+    canvas.style.display = 'none';
+    
+    // Oyun müziğini durdur ve menü müziğini başlat
+    AudioManager.stopMusic();
+    AudioManager.play('menuMusic');
 }
 
 function hideMenu() {
@@ -904,12 +927,34 @@ function resetGame() {
 
 // Sayfa yüklendiğinde karakter önizlemelerini başlat
 window.addEventListener('load', () => {
+    console.log('Proje konumu:', window.location.href);
+    console.log('Ses dosyaları kontrol ediliyor...');
+    Object.entries(AudioManager.sounds).forEach(([name, audio]) => {
+        console.log(`${name} dosya yolu:`, audio.src);
+        // Dosyanın varlığını kontrol et
+        fetch(audio.src)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log(`${name} dosyası bulundu!`);
+            })
+            .catch(error => {
+                console.error(`${name} dosyası bulunamadı:`, error);
+            });
+    });
+    AudioManager.init();
     initializeCharacterPreviews();
     canvas.width = 800;
     canvas.height = 400;
     showMenu();
     resetGame();
     gameLoop();
+    
+    // Menü müziğini kaldıralım
+    // setTimeout(() => {
+    //     AudioManager.play('menuMusic');
+    // }, 100);
     
     // Enter tuşuna basıldığında oyunu başlatma
     document.getElementById('player2-name').addEventListener('keypress', (e) => {
@@ -932,6 +977,7 @@ document.head.appendChild(style);
 
 // Gol animasyonu fonksiyonunu güncelle
 function showGoalAnimation() {
+    AudioManager.play('goal');
     isGameRunning = false;
     
     const goalAnim = document.createElement('div');
@@ -983,4 +1029,150 @@ function checkGoal() {
         return true;
     }
     return false;
-} 
+}
+
+// Ses yönetimi için audio sınıfı
+const AudioManager = {
+    sounds: {
+        kick: new Audio('sounds/kick.mp3'),
+        goal: new Audio('sounds/goal.mp3'),
+        wallHit: new Audio('sounds/wall-hit.mp3'),
+        whistle: new Audio('sounds/whistle.mp3'),
+        win: new Audio('sounds/win.mp3'),
+        draw: new Audio('sounds/draw.mp3'),
+        menuMusic: new Audio('sounds/menu-music.mp3'),
+        gameMusic: new Audio('sounds/game-music.mp3')
+    },
+
+    // Ses seviyeleri
+    volumes: {
+        music: 0.3,
+        sfx: 0.6
+    },
+
+    init() {
+        try {
+            // Her ses için format kontrolü
+            Object.entries(this.sounds).forEach(([name, audio]) => {
+                audio.addEventListener('error', () => {
+                    console.log(`${name}.mp3 yüklenemedi, WAV deneniyor...`);
+                    this.sounds[name] = new Audio(`sounds/${name}.wav`);
+                });
+
+                // Otomatik oynatma politikasını aşmak için
+                audio.autoplay = true;
+                audio.muted = true;
+                audio.muted = false;
+            });
+
+            // Arka plan müzikleri için loop
+            this.sounds.menuMusic.loop = true;
+            this.sounds.gameMusic.loop = true;
+            
+            // Ses seviyelerini ayarla
+            this.updateVolumes();
+
+            // Volume kontrollerini dinle
+            this.setupVolumeControls();
+
+            // Menü müziğini otomatik başlatmayı dene
+            this.autoPlayMusic();
+
+        } catch (error) {
+            console.error('Ses sistemi başlatılırken hata:', error);
+        }
+    },
+
+    autoPlayMusic() {
+        const playAttempt = setInterval(() => {
+            this.play('menuMusic')
+                .then(() => {
+                    clearInterval(playAttempt);
+                })
+                .catch(() => {
+                    console.log('Müzik başlatma denemesi başarısız, tekrar deneniyor...');
+                });
+        }, 1000);
+    },
+
+    updateVolumes() {
+        // Müzik sesleri
+        this.sounds.menuMusic.volume = this.volumes.music;
+        this.sounds.gameMusic.volume = this.volumes.music;
+
+        // Efekt sesleri
+        this.sounds.kick.volume = this.volumes.sfx;
+        this.sounds.goal.volume = this.volumes.sfx;
+        this.sounds.wallHit.volume = this.volumes.sfx;
+        this.sounds.whistle.volume = this.volumes.sfx;
+        this.sounds.win.volume = this.volumes.sfx;
+        this.sounds.draw.volume = this.volumes.sfx;
+    },
+
+    setupVolumeControls() {
+        const musicSlider = document.getElementById('music-volume');
+        const sfxSlider = document.getElementById('sfx-volume');
+
+        const updateSliderBackground = (slider, value) => {
+            slider.style.setProperty('--value', `${value}%`);
+        };
+
+        musicSlider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            this.volumes.music = value / 100;
+            updateSliderBackground(musicSlider, value);
+            this.updateVolumes();
+        });
+
+        sfxSlider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            this.volumes.sfx = value / 100;
+            updateSliderBackground(sfxSlider, value);
+            this.updateVolumes();
+        });
+
+        // Başlangıç değerlerini ayarla
+        updateSliderBackground(musicSlider, musicSlider.value);
+        updateSliderBackground(sfxSlider, sfxSlider.value);
+    },
+
+    play(soundName) {
+        const sound = this.sounds[soundName];
+        if (sound) {
+            try {
+                // Eğer müzik çalınıyorsa, diğer müzikleri durdur
+                if (soundName === 'menuMusic' || soundName === 'gameMusic') {
+                    this.stopMusic();
+                }
+                
+                sound.currentTime = 0;
+                return sound.play();
+            } catch (error) {
+                console.error(`${soundName} çalınırken hata:`, error);
+                return Promise.reject(error);
+            }
+        }
+        return Promise.reject(new Error('Ses bulunamadı'));
+    },
+
+    stopMusic() {
+        this.sounds.menuMusic.pause();
+        this.sounds.menuMusic.currentTime = 0;
+        this.sounds.gameMusic.pause();
+        this.sounds.gameMusic.currentTime = 0;
+    }
+};
+
+// Ses kontrolü için
+document.getElementById('sound-toggle').addEventListener('click', function() {
+    const isMuted = this.classList.toggle('muted');
+    const icon = this.querySelector('i');
+    
+    // Tüm seslerin durumunu güncelle
+    Object.values(AudioManager.sounds).forEach(sound => {
+        sound.muted = isMuted;
+    });
+    
+    // İkonu güncelle
+    icon.className = isMuted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
+}); 
